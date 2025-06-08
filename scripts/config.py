@@ -33,6 +33,7 @@ MERGED_CSV = os.path.join(PROCESSED_DIR, "villagers_merged.csv")
 
 # Outputs folder
 OUTPUTS_DIR = os.path.join(ROOT_DIR, "outputs")
+HYPERPARAMETER_RESULTS_CSV = os.path.join(OUTPUTS_DIR, "hyperparameter_sweep_results.csv")
 
 # Scripts folder
 SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
