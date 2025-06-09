@@ -1,5 +1,5 @@
 # :palm_tree: Animal Crossing Villager Popularity Predictor + Recommendation System
-As someone who loves Animal Crossing and data science, I built this machine learning project to:
+I love Animal Crossing. I love data. Therefore, I built this machine learning project to:
 * Predict the **popularity** of Animal Crossing: New Horizons villagers based on image and metadata 
   features.
 * Recommend **similar villagers** based on your favorites using cosine similarity.
