@@ -88,16 +88,16 @@ def build_features(
     # Categorical features
     if use_categorical is True:
         # Combine Personality and Subtype
-        df_local["PersonalitySubtype"] = (
+        df_local["Personality_Subtype"] = (
             df_local["Personality"].fillna("") + "_" + df_local["Subtype"].fillna("")
         )
 
         # Combine Style List
-        df_local["Style_List"] = df_local[["Style 1", "Style 2"]].values.tolist()
+        df_local["Style_List"] = df_local[["Style_1", "Style_2"]].values.tolist()
         df_local["Style_List"] = df_local["Style_List"].apply(lambda lst: list(set(lst)))
 
         # Combine Color List
-        df_local["Color_List"] = df_local[["Color 1", "Color 2"]].values.tolist()
+        df_local["Color_List"] = df_local[["Color_1", "Color_2"]].values.tolist()
         df_local["Color_List"] = df_local["Color_List"].apply(lambda lst: list(set(lst)))
 
         # One-hot encoded feature list
@@ -106,12 +106,14 @@ def build_features(
                 "Species",
                 "Gender",
                 "Personality",
-                "PersonalitySubtype",
+                "Personality_Subtype",
                 "Hobby",
-                "Style 1",
-                "Style 2",
-                "Color 1",
-                "Color 2",
+                "Style_1",
+                "Style_2",
+                "Color_1",
+                "Color_2",
+                "Version_Added",
+                "Pocket_Camp_Theme",
             ]
         ].fillna("Unknown")
 

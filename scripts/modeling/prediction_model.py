@@ -21,7 +21,7 @@ use_categorical = True
 n_components_icon = 8
 n_components_photo = 8
 alpha = 1.0
-random_state = 42  # For reproducibility across runs
+random_state = 41  # For reproducibility across runs
 
 # OUTPUT PARAMETERS
 save_test_results = True
