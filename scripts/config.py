@@ -20,22 +20,19 @@ CATEGORICAL_FEATURE_LIST = [
     "Species",
     "Gender",
     "Personality",
-    "Personality Subtype",
     "Hobby",
-    "Style 1",
-    "Style 2",
-    "Color 1",
-    "Color 2",
+    "Style List",
+    "Color List",
     "Favorite Song",
     "Default Umbrella",
     "Wallpaper",
     "Flooring",
-    "Furniture List",
-    "Furniture Name List",
     "Version Added",
     "Pocket Camp Theme",
-    "Meta Tags",
+    "Meta Tags"
 ]
+
+# TODO: I will add Furniture List later
 
 
 @dataclass
