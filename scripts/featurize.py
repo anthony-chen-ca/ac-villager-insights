@@ -40,7 +40,7 @@ def build_features(config: ModelConfig):
 
     # Visual features
     for visual_feature in config.visual_settings:
-        prefix = visual_feature.name.value
+        prefix = visual_feature.name.value + " CLIP"
         column_names = [col for col in df.columns if col.startswith(prefix)]
         column_data = df[column_names].values
         column_data = StandardScaler().fit_transform(column_data)
@@ -116,8 +116,10 @@ def build_features(config: ModelConfig):
         cat_data = df[onehot_fields].fillna("Unknown")
         encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         encoded = encoder.fit_transform(cat_data)
+        raw_feature_names = encoder.get_feature_names_out(onehot_fields)
+        cleaned_feature_names = [name.replace("_", " ") for name in raw_feature_names]
         feature_parts.append(encoded)
-        feature_names += list(encoder.get_feature_names_out(onehot_fields))
+        feature_names += cleaned_feature_names
 
     if not feature_parts:
         raise ValueError("No features selected.")

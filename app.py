@@ -7,7 +7,7 @@ The front-end logic of the app.
 import streamlit as st
 import math
 from dataclasses import asdict
-# from scripts.modeling.ridge_model import run_ridge
+from scripts.modeling.ridge_model import run_ridge
 from scripts.config import *
 
 
@@ -113,9 +113,20 @@ def main():
         try:
             config.validate()
             st.json(asdict(config))
-            # if config.model_settings.model == ModelType.RIDGE:
-            #     run_ridge(config)
-                # Then display outputs
+            if config.model_settings.model == ModelType.RIDGE:
+                results = run_ridge(config)
+
+                st.metric("MAE", f"{results['mae']:.2f}")
+                st.metric("R²", f"{results['r2']:.3f}")
+
+                st.subheader("Predictions on Test Set")
+                st.dataframe(results["test_results"])
+
+                st.subheader("Top 20 Most Influential Features")
+                st.dataframe(results["top_coefficients"][["Feature", "Coefficient"]])
+
+                st.image(results["coef_plot_path"],
+                         caption="Top 20 Coefficients (Ridge)")
         except ValueError as e:
             st.error(str(e))
 
