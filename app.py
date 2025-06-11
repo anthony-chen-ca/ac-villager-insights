@@ -7,7 +7,7 @@ The front-end logic of the app.
 import streamlit as st
 import math
 from dataclasses import asdict
-from scripts.modeling.ridge_model import run_ridge
+# from scripts.modeling.ridge_model import run_ridge
 from scripts.config import *
 
 

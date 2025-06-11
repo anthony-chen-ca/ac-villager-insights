@@ -14,34 +14,20 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
+from scripts.config import ModelConfig
+from scripts.file_locations import MERGED_CSV
 
 
-def build_features(
-    df,
-    icon_weight,
-    photo_weight,
-    use_categorical=True,
-    n_components_icon=None,
-    n_components_photo=None,
-    random_state=None,
-):
+def parse_tags(s):
+    return [tag.strip() for tag in s.split(";") if tag.strip()] if pd.notna(s) else []
+
+
+def build_features(config: ModelConfig):
     """
-    Transforms a villager DataFrame into a numerical feature matrix.
+    Builds a numerical feature matrix.
 
-    This function extracts visual and categorical features, applies scaling, optional
-    dimensionality reduction via PCA, and applies custom weighting to each feature group. The
-    resulting features are suitable for use in ML models.
-
-    Args:
-        df (pd.DataFrame): Input DataFrame containing villager data.
-        icon_weight (float): Weight multiplier for icon image CLIP features.
-        photo_weight (float): Weight multiplier for photo image CLIP features.
-        use_categorical (bool): Toggle all categorical features on and off.
-        n_components_icon (int, optional): Number of PCA components for icon CLIP vectors. If
-        None, PCA is skipped.
-        n_components_photo (int, optional): Number of PCA components for photo CLIP vectors. If
-        None, PCA is skipped.
-        random_state (int, optional): Random seed for reproducibility of PCA.
+    This function extracts visual and categorical features. The resulting features are suitable
+    for use in ML models.
 
     Returns:
         X (np.ndarray): Feature matrix of shape (n_samples, n_features).
@@ -50,122 +36,97 @@ def build_features(
     """
     feature_names = []
     feature_parts = []
-    df_local = df.copy()
+    df = pd.read_csv(MERGED_CSV)
 
-    # Icon features
-    if icon_weight > 0:
-        icon_cols = [col for col in df_local.columns if col.startswith("Icon_CLIP_")]
-        icon_data = df_local[icon_cols].values
-        icon_scaled = StandardScaler().fit_transform(icon_data)
+    # Visual features
+    for visual_feature in config.visual_settings:
+        prefix = visual_feature.name.value
+        column_names = [col for col in df.columns if col.startswith(prefix)]
+        column_data = df[column_names].values
+        column_data = StandardScaler().fit_transform(column_data)
 
-        if n_components_icon is not None:
-            icon_pca = PCA(n_components=n_components_icon, random_state=random_state)
-            icon_scaled = icon_pca.fit_transform(icon_scaled)
-            icon_column_names = [f"Icon_PCA_{i}" for i in range(icon_scaled.shape[1])]
-        else:
-            icon_column_names = icon_cols
+        # Apply PCA if requested
+        if visual_feature.pca is not None:
+            pca = PCA(
+                n_components=visual_feature.pca,
+                random_state=config.model_settings.random_seed,
+            )
+            column_data = pca.fit_transform(column_data)
+            column_names = [f"{prefix} PCA {i}" for i in range(column_data.shape[1])]
 
-        icon_scaled *= icon_weight
-        feature_names += icon_column_names
-        feature_parts.append(icon_scaled)
+        feature_names += column_names
+        feature_parts.append(column_data)
 
-    # Photo features
-    if photo_weight > 0:
-        photo_cols = [col for col in df_local.columns if col.startswith("Photo_CLIP_")]
-        photo_data = df_local[photo_cols].values
-        photo_scaled = StandardScaler().fit_transform(photo_data)
-
-        if n_components_photo is not None:
-            photo_pca = PCA(n_components=n_components_photo, random_state=random_state)
-            photo_scaled = photo_pca.fit_transform(photo_scaled)
-            photo_column_names = [f"Photo_PCA_{i}" for i in range(photo_scaled.shape[1])]
-        else:
-            photo_column_names = photo_cols
-
-        photo_scaled *= photo_weight
-        feature_names += photo_column_names
-        feature_parts.append(photo_scaled)
+    onehot_fields = []
+    mlb_registry = {}
 
     # Categorical features
-    if use_categorical is True:
-        # Combine Personality and Subtype
-        df_local["Personality Subtype"] = (
-            df_local["Personality"].fillna("") + " " + df_local["Subtype"].fillna("")
-        )
+    for categorical_feature in config.categorical_settings:
+        if categorical_feature == "Personality":
+            # Combine Personality and Subtype into one field
+            df["Personality Subtype"] = (
+                df["Personality"].fillna("") + " " + df["Subtype"].fillna("")
+            )
+            onehot_fields.append("Personality Subtype")
 
-        # Combine Style List
-        df_local["Style List"] = df_local[["Style 1", "Style 2"]].values.tolist()
-        df_local["Style List"] = df_local["Style List"].apply(lambda lst: list(set(lst)))
+        elif categorical_feature == "Style List":
+            df["Style List"] = df[["Style 1", "Style 2"]].values.tolist()
+            df["Style List"] = df["Style List"].apply(lambda lst: list(set(lst)))
+            mlb = MultiLabelBinarizer()
+            style_encoded = mlb.fit_transform(df["Style List"])
+            mlb_registry["Style"] = mlb
+            feature_parts.append(style_encoded)
+            feature_names += [f"Style Tag {tag}" for tag in mlb.classes_]
 
-        # Combine Color List
-        df_local["Color List"] = df_local[["Color 1", "Color 2"]].values.tolist()
-        df_local["Color List"] = df_local["Color List"].apply(lambda lst: list(set(lst)))
+        elif categorical_feature == "Color List":
+            df["Color List"] = df[["Color 1", "Color 2"]].values.tolist()
+            df["Color List"] = df["Color List"].apply(lambda lst: list(set(lst)))
+            mlb = MultiLabelBinarizer()
+            color_encoded = mlb.fit_transform(df["Color List"])
+            mlb_registry["Color"] = mlb
+            feature_parts.append(color_encoded)
+            feature_names += [f"Color Tag {tag}" for tag in mlb.classes_]
 
-        # One-hot encoded feature list
-        cat_data = df_local[
-            [
-                "Species",
-                "Gender",
-                "Personality",
-                "Personality Subtype",
-                "Hobby",
-                "Style 1",
-                "Style 2",
-                "Color 1",
-                "Color 2",
-                "Version Added",
-                "Pocket Camp Theme",
-            ]
-        ].fillna("Unknown")
+        elif categorical_feature == "Meta Tags":
+            df["Meta Tag List"] = df["Meta Tags"].apply(parse_tags)
+            mlb = MultiLabelBinarizer()
+            meta_encoded = mlb.fit_transform(df["Meta Tag List"])
+            mlb_registry["Meta"] = mlb
+            feature_parts.append(meta_encoded)
+            feature_names += [f"Meta Tag {tag}" for tag in mlb.classes_]
 
+        elif categorical_feature in [
+            "Species",
+            "Gender",
+            "Hobby",
+            "Favorite Song",
+            "Default Umbrella",
+            "Wallpaper",
+            "Flooring",
+            "Version Added",
+            "Pocket Camp Theme",
+        ]:
+            onehot_fields.append(categorical_feature)
+
+        else:
+            raise ValueError(f"Unsupported categorical feature: {categorical_feature}")
+
+    # One-hot encode all collected onehot_fields together
+    if onehot_fields:
+        cat_data = df[onehot_fields].fillna("Unknown")
         encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-        cat_encoded = encoder.fit_transform(cat_data)
-        cat_feature_names = encoder.get_feature_names_out(cat_data.columns)
-
-        # Multi-hot encode tag-like list features
-        def parse_tags(s):
-            return [tag.strip() for tag in s.split(";") if tag.strip()] if pd.notna(s) else []
-
-        df_local["Visual Tag List"] = df_local["Visual Tags"].apply(parse_tags)
-        df_local["Theme Tag List"] = df_local["Theme Tags"].apply(parse_tags)
-        df_local["Meta Tag List"] = df_local["Meta Tags"].apply(parse_tags)
-
-        mlb_style = MultiLabelBinarizer()
-        mlb_color = MultiLabelBinarizer()
-        mlb_visual = MultiLabelBinarizer()
-        mlb_theme = MultiLabelBinarizer()
-        mlb_meta = MultiLabelBinarizer()
-
-        style_list_encoded = mlb_style.fit_transform(df_local["Style List"])
-        color_list_encoded = mlb_color.fit_transform(df_local["Color List"])
-        visual_tag_encoded = mlb_visual.fit_transform(df_local["Visual Tag List"])
-        theme_tag_encoded = mlb_theme.fit_transform(df_local["Theme Tag List"])
-        meta_tag_encoded = mlb_meta.fit_transform(df_local["Meta Tag List"])
-
-        # Concatenate all encoded categorical features
-        cat_combined = np.concatenate([
-            cat_encoded,
-            style_list_encoded,
-            color_list_encoded,
-            visual_tag_encoded,
-            theme_tag_encoded,
-            meta_tag_encoded,
-        ], axis=1)
-
-        # Append features and names
-        feature_parts.append(cat_combined)
-        feature_names += list(cat_feature_names)
-        feature_names += [f"Style Tag {s}" for s in mlb_style.classes_]
-        feature_names += [f"Color Tag {c}" for c in mlb_color.classes_]
-        feature_names += [f"Visual Tag {t}" for t in mlb_visual.classes_]
-        feature_names += [f"Theme Tag {t}" for t in mlb_theme.classes_]
-        feature_names += [f"Meta Tag {t}" for t in mlb_meta.classes_]
+        encoded = encoder.fit_transform(cat_data)
+        feature_parts.append(encoded)
+        feature_names += list(encoder.get_feature_names_out(onehot_fields))
 
     if not feature_parts:
         raise ValueError("No features selected.")
 
     # Combine all features
     X = np.concatenate(feature_parts, axis=1)
-    y = df_local["Votes"].values
+
+    assert X.shape[0] == len(df), "Mismatch between data rows and feature rows"
+
+    y = df["Votes"].values
 
     return X, y, feature_names
