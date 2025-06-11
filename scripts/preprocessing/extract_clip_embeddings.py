@@ -12,6 +12,7 @@ import clip
 from PIL import Image
 from tqdm import tqdm
 from scripts.file_locations import ICON_DIR, PHOTO_DIR, VILLAGER_CSV, CLIP_EMBEDDINGS_CSV
+from scripts.config import VisualType
 
 # Load CLIP model
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -40,7 +41,7 @@ for name in tqdm(names):
             with torch.no_grad():
                 icon_embed = model.encode_image(image).cpu().squeeze().numpy()
             for i, val in enumerate(icon_embed):
-                row[f"Icon_CLIP_{i}"] = val
+                row[f"{VisualType.ICON.value} CLIP {i}"] = val
         except Exception as e:
             print(f"Failed to process icon for {name}: {e}")
 
@@ -51,7 +52,7 @@ for name in tqdm(names):
             with torch.no_grad():
                 photo_embed = model.encode_image(image).cpu().squeeze().numpy()
             for i, val in enumerate(photo_embed):
-                row[f"Photo_CLIP_{i}"] = val
+                row[f"{VisualType.PHOTO.value} CLIP {i}"] = val
         except Exception as e:
             print(f"Failed to process photo for {name}: {e}")
 
