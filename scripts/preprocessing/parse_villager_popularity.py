@@ -7,7 +7,7 @@ merges all popularity data across dates, and stores the result in POPULARITY_CSV
 
 import os
 import pandas as pd
-from scripts.config import POPULARITY_ARCHIVE_DIR, POPULARITY_CSV
+from scripts.file_locations import POPULARITY_ARCHIVE_DIR, POPULARITY_CSV
 
 
 def extract_name_vote_pairs(filepath):

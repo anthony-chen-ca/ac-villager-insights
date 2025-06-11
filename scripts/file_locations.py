@@ -1,5 +1,5 @@
 """
-config.py
+file_locations.py
 
 Locations for various directories and files.
 """
@@ -27,6 +27,7 @@ VILLAGER_CSV = os.path.join(INTERIM_DIR, "villagers.csv")
 POPULARITY_CSV = os.path.join(INTERIM_DIR, "villager_popularity.csv")
 CLIP_EMBEDDINGS_CSV = os.path.join(INTERIM_DIR, "villager_clip_embeddings.csv")
 POCKET_CAMP_THEME_CSV = os.path.join(INTERIM_DIR, "pocket_camp_themes.csv")
+CUSTOM_TAG_CSV = os.path.join(INTERIM_DIR, "villager_custom_tags.csv")
 
 # Processed folder
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")

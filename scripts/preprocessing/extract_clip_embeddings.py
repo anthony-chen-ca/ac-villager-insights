@@ -11,7 +11,7 @@ import torch
 import clip
 from PIL import Image
 from tqdm import tqdm
-from scripts.config import ICON_DIR, PHOTO_DIR, VILLAGER_CSV, CLIP_EMBEDDINGS_CSV
+from scripts.file_locations import ICON_DIR, PHOTO_DIR, VILLAGER_CSV, CLIP_EMBEDDINGS_CSV
 
 # Load CLIP model
 device = "cuda" if torch.cuda.is_available() else "cpu"

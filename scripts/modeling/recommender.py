@@ -7,7 +7,7 @@ Very bare-bones for now, I'll make it interactive soon.
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from scripts.config import MERGED_CSV
+from scripts.file_locations import MERGED_CSV
 from scripts.featurize import build_features
 
 # PARAMETERS

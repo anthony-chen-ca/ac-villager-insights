@@ -9,3 +9,4 @@ pillow~=11.2.1
 matplotlib~=3.10.3
 shap~=0.47.2
 beautifulsoup4~=4.13.4
+streamlit~=1.45.1

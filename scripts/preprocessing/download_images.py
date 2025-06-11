@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import requests
 from tqdm import tqdm
-from scripts.config import ICON_DIR, PHOTO_DIR, VILLAGER_CSV
+from scripts.file_locations import ICON_DIR, PHOTO_DIR, VILLAGER_CSV
 
 # Ensure output folders exist
 os.makedirs(ICON_DIR, exist_ok=True)

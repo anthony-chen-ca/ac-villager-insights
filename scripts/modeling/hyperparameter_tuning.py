@@ -10,7 +10,7 @@ from itertools import product
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
-from scripts.config import MERGED_CSV, HYPERPARAMETER_RESULTS_CSV
+from scripts.file_locations import MERGED_CSV, HYPERPARAMETER_RESULTS_CSV
 from scripts.featurize import build_features
 
 

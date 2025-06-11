@@ -11,6 +11,7 @@ Used by modeling scripts for prediction and recommendation tasks.
 """
 
 import numpy as np
+import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 
@@ -88,17 +89,17 @@ def build_features(
     # Categorical features
     if use_categorical is True:
         # Combine Personality and Subtype
-        df_local["Personality_Subtype"] = (
-            df_local["Personality"].fillna("") + "_" + df_local["Subtype"].fillna("")
+        df_local["Personality Subtype"] = (
+            df_local["Personality"].fillna("") + " " + df_local["Subtype"].fillna("")
         )
 
         # Combine Style List
-        df_local["Style_List"] = df_local[["Style_1", "Style_2"]].values.tolist()
-        df_local["Style_List"] = df_local["Style_List"].apply(lambda lst: list(set(lst)))
+        df_local["Style List"] = df_local[["Style 1", "Style 2"]].values.tolist()
+        df_local["Style List"] = df_local["Style List"].apply(lambda lst: list(set(lst)))
 
         # Combine Color List
-        df_local["Color_List"] = df_local[["Color_1", "Color_2"]].values.tolist()
-        df_local["Color_List"] = df_local["Color_List"].apply(lambda lst: list(set(lst)))
+        df_local["Color List"] = df_local[["Color 1", "Color 2"]].values.tolist()
+        df_local["Color List"] = df_local["Color List"].apply(lambda lst: list(set(lst)))
 
         # One-hot encoded feature list
         cat_data = df_local[
@@ -106,37 +107,62 @@ def build_features(
                 "Species",
                 "Gender",
                 "Personality",
-                "Personality_Subtype",
+                "Personality Subtype",
                 "Hobby",
-                "Style_1",
-                "Style_2",
-                "Color_1",
-                "Color_2",
-                "Version_Added",
-                "Pocket_Camp_Theme",
+                "Style 1",
+                "Style 2",
+                "Color 1",
+                "Color 2",
+                "Version Added",
+                "Pocket Camp Theme",
             ]
         ].fillna("Unknown")
 
-        # Encode ordered features
         encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         cat_encoded = encoder.fit_transform(cat_data)
         cat_feature_names = encoder.get_feature_names_out(cat_data.columns)
 
-        # Encode unordered set features
+        # Multi-hot encode tag-like list features
+        def parse_tags(s):
+            return [tag.strip() for tag in s.split(";") if tag.strip()] if pd.notna(s) else []
+
+        df_local["Visual Tag List"] = df_local["Visual Tags"].apply(parse_tags)
+        df_local["Theme Tag List"] = df_local["Theme Tags"].apply(parse_tags)
+        df_local["Meta Tag List"] = df_local["Meta Tags"].apply(parse_tags)
+
         mlb_style = MultiLabelBinarizer()
         mlb_color = MultiLabelBinarizer()
-        style_list_encoded = mlb_style.fit_transform(df_local["Style_List"])
-        color_list_encoded = mlb_color.fit_transform(df_local["Color_List"])
+        mlb_visual = MultiLabelBinarizer()
+        mlb_theme = MultiLabelBinarizer()
+        mlb_meta = MultiLabelBinarizer()
 
-        # Concatenate all categorical parts and append everything
-        cat_combined = np.concatenate([cat_encoded, style_list_encoded, color_list_encoded], axis=1)
+        style_list_encoded = mlb_style.fit_transform(df_local["Style List"])
+        color_list_encoded = mlb_color.fit_transform(df_local["Color List"])
+        visual_tag_encoded = mlb_visual.fit_transform(df_local["Visual Tag List"])
+        theme_tag_encoded = mlb_theme.fit_transform(df_local["Theme Tag List"])
+        meta_tag_encoded = mlb_meta.fit_transform(df_local["Meta Tag List"])
+
+        # Concatenate all encoded categorical features
+        cat_combined = np.concatenate([
+            cat_encoded,
+            style_list_encoded,
+            color_list_encoded,
+            visual_tag_encoded,
+            theme_tag_encoded,
+            meta_tag_encoded,
+        ], axis=1)
+
+        # Append features and names
         feature_parts.append(cat_combined)
         feature_names += list(cat_feature_names)
-        feature_names += [f"Style_Tag_{s}" for s in mlb_style.classes_]
-        feature_names += [f"Color_Tag_{c}" for c in mlb_color.classes_]
+        feature_names += [f"Style Tag {s}" for s in mlb_style.classes_]
+        feature_names += [f"Color Tag {c}" for c in mlb_color.classes_]
+        feature_names += [f"Visual Tag {t}" for t in mlb_visual.classes_]
+        feature_names += [f"Theme Tag {t}" for t in mlb_theme.classes_]
+        feature_names += [f"Meta Tag {t}" for t in mlb_meta.classes_]
 
     if not feature_parts:
-        raise ValueError("No features selected. Please readjust at least one weight from 0.")
+        raise ValueError("No features selected.")
 
     # Combine all features
     X = np.concatenate(feature_parts, axis=1)
