@@ -1,6 +1,5 @@
 """
 ridge_model.py
-
 """
 
 import pandas as pd
@@ -16,6 +15,20 @@ from scripts.featurize import build_features
 
 
 def run_ridge(config: ModelConfig):
+    """
+    Trains a Ridge regression model on villager features and evaluates performance.
+
+    Args:
+        config (ModelConfig): Configuration containing model and feature parameters.
+
+    Returns:
+        dict: A dictionary containing:
+            - 'mae': Mean Absolute Error on test set
+            - 'r2': R^2 score on test set
+            - 'test_results': pd.DataFrame with columns [Name, Predicted, Actual]
+            - 'top_coefficients': pd.DataFrame with columns [Feature, Coefficient]
+
+    """
     # Config
     alpha = config.model_settings.alpha
     seed = config.model_settings.random_seed
@@ -54,6 +67,7 @@ def run_ridge(config: ModelConfig):
 
     # Test prediction output
     test_results = pd.DataFrame({
+        "Image": df.loc[idx_test, "Icon Image URL"].values,
         "Name": names[idx_test],
         "Predicted": np.round(y_pred_raw).astype(int),
         "Actual": y_true_raw.astype(int)

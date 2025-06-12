@@ -72,9 +72,9 @@ def model_widget():
     model = st.selectbox("Model", [ModelType.RIDGE.value, ModelType.RANDOM_FOREST.value])
     alpha, n_estimators, max_depth, random_seed = None, None, None, None
 
-    if model == ModelType.RIDGE:
+    if model == ModelType.RIDGE.value:
         alpha = st.slider("Ridge Alpha", value=1.0, step=0.1)
-    elif model == ModelType.RANDOM_FOREST:
+    elif model == ModelType.RANDOM_FOREST.value:
         n_estimators = st.slider("Number of Estimators", value=1, step=1)
         max_depth = st.slider("Max Depth")
 
@@ -93,26 +93,32 @@ def main():
     st.set_page_config(page_title="ACNH Popularity Predictor", page_icon="🍃")
 
     st.title("Animal Crossing Villager Popularity Prediction")
-    st.header("Model Configuration")
 
-    st.subheader("Step 1: Choose your features")
-    categorical_settings = categorical_feature_widget()
-    visual_settings = visual_feature_widget()
+    # Sidebar
+    with st.sidebar:
+        st.header("Model Configuration")
 
-    st.subheader("Step 2: Choose your model and hyperparameters")
-    model_settings = model_widget()
+        st.subheader("Step 1: Choose your features")
+        categorical_settings = categorical_feature_widget()
+        visual_settings = visual_feature_widget()
 
-    config = ModelConfig(
-        categorical_settings=categorical_settings,
-        visual_settings=visual_settings,
-        model_settings=model_settings
-    )
+        st.subheader("Step 2: Choose your model and hyperparameters")
+        model_settings = model_widget()
 
-    st.subheader("Step 3: Run the model!")
-    if st.button("Run Model"):
+        config = ModelConfig(
+            categorical_settings=categorical_settings,
+            visual_settings=visual_settings,
+            model_settings=model_settings
+        )
+
+        st.subheader("Step 3: Run the model!")
+        run_clicked = st.button("Run Model")
+
+    # Main display
+    if run_clicked:
         try:
             config.validate()
-            st.json(asdict(config))
+            # st.json(asdict(config))  # Uncomment this line for debug
             if config.model_settings.model == ModelType.RIDGE:
                 results = run_ridge(config)
 
@@ -120,10 +126,24 @@ def main():
                 st.metric("R²", f"{results['r2']:.3f}")
 
                 st.subheader("Predictions on Test Set")
-                st.dataframe(results["test_results"])
+                test_results = results["test_results"]
+                st.dataframe(
+                    test_results[["Image", "Name", "Predicted", "Actual"]],
+                    column_config={
+                        "Image": st.column_config.ImageColumn("Image", width="small"),
+                        "Name": "Name",
+                        "Predicted": "Predicted",
+                        "Actual": "Actual"
+                    },
+                    use_container_width=True,
+                    hide_index=True
+                )
 
                 st.subheader("Top 20 Most Influential Features")
-                st.dataframe(results["top_coefficients"][["Feature", "Coefficient"]])
+                st.dataframe(
+                    results["top_coefficients"][["Feature", "Coefficient"]],
+                    hide_index=True
+                )
 
                 st.image(results["coef_plot_path"],
                          caption="Top 20 Coefficients (Ridge)")

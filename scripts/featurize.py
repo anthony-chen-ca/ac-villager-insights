@@ -29,6 +29,9 @@ def build_features(config: ModelConfig):
     This function extracts visual and categorical features. The resulting features are suitable
     for use in ML models.
 
+    Args:
+        config (ModelConfig): Configuration containing model and feature parameters.
+
     Returns:
         X (np.ndarray): Feature matrix of shape (n_samples, n_features).
         y (np.ndarray): Target vote count.
