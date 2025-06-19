@@ -7,31 +7,25 @@ Very bare-bones for now, I'll make it interactive soon.
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+
+from scripts.config import *
 from scripts.file_locations import MERGED_CSV
 from scripts.featurize import build_features
 
 # PARAMETERS
-icon_weight = 0.5
-photo_weight = 0.5
-use_categorical = True
-n_components_icon = 8
-n_components_photo = 8
-random_state = 1
-
-selected_villagers = ["Lobo", "Kyle", "Tiansheng"]
+selected_villagers = ["Chai", "Chelsea", "Rilla"]
 top_k = 10
+
+config = ModelConfig(
+    categorical_settings=CATEGORICAL_FEATURE_LIST,
+    visual_settings=[VisualFeatureConfig(name=VisualType.ICON, pca=8),
+                     VisualFeatureConfig(name=VisualType.PHOTO, pca=8)],
+    model_settings=ModelSettings(model=ModelType.RIDGE, alpha=1.0)
+)
 
 # LOAD DATA
 df = pd.read_csv(MERGED_CSV)
-X, _, feature_names = build_features(
-    df,
-    icon_weight,
-    photo_weight,
-    use_categorical,
-    n_components_icon,
-    n_components_photo,
-    random_state,
-)
+X, _, feature_names = build_features(config)
 
 # Track villager names
 names = df["Name"].values
