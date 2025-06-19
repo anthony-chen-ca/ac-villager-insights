@@ -145,8 +145,8 @@ def main():
                     hide_index=True
                 )
 
-                st.image(results["coef_plot_path"],
-                         caption="Top 20 Coefficients (Ridge)")
+                st.subheader("Top 20 Coefficients (Ridge)")
+                st.plotly_chart(results["coef_plot"], use_container_width=True)
         except ValueError as e:
             st.error(str(e))
 

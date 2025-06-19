@@ -4,7 +4,7 @@ ridge_model.py
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.express as px
 import os
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
@@ -84,18 +84,25 @@ def run_ridge(config: ModelConfig):
     # Save top-K coefficient plot
     coef_plot_path = os.path.join(OUTPUTS_DIR, "top_k_coefficients.png")
 
-    plt.figure(figsize=(10, 6))
-    plt.barh(top_coefficients["Feature"][::-1], top_coefficients["Coefficient"][::-1])
-    plt.xlabel("Coefficient")
-    plt.title(f"Top {top_k} Most Influential Features (Ridge)")
-    plt.tight_layout()
-    plt.savefig(coef_plot_path, bbox_inches="tight")
-    plt.close()
+    # Create Plotly bar plot
+    fig = px.bar(
+        top_coefficients[::-1],  # reverse for descending vertical
+        x="Coefficient",
+        y="Feature",
+        orientation="h",
+        title=f"Top {top_k} Most Influential Features (Ridge)",
+        text="Coefficient"
+    )
+    fig.update_layout(yaxis=dict(tickfont=dict(size=10)))
+    fig.update_traces(marker_color='mediumseagreen')  # Optional styling
+
+    # Save as image path only if you want to keep it (optional now)
+    fig.write_image(coef_plot_path)
 
     return {
         "mae": mae,
         "r2": r2,
         "test_results": test_results,
         "top_coefficients": top_coefficients,
-        "coef_plot_path": coef_plot_path,
+        "coef_plot": fig,
     }
