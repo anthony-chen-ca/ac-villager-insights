@@ -29,6 +29,8 @@ CATEGORICAL_FEATURE_LIST = [
     "Flooring",
     "Version Added",
     "Pocket Camp Theme",
+    "Visual Tags",
+    "Theme Tags",
     "Meta Tags"
 ]
 

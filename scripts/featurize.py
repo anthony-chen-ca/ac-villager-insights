@@ -90,6 +90,22 @@ def build_features(config: ModelConfig):
             feature_parts.append(color_encoded)
             feature_names += [f"Color Tag {tag}" for tag in mlb.classes_]
 
+        elif categorical_feature == "Visual Tags":
+            df["Visual Tag List"] = df["Visual Tags"].apply(parse_tags)
+            mlb = MultiLabelBinarizer()
+            visual_encoded = mlb.fit_transform(df["Visual Tag List"])
+            mlb_registry["Visual"] = mlb
+            feature_parts.append(visual_encoded)
+            feature_names += [f"Visual Tag {tag}" for tag in mlb.classes_]
+
+        elif categorical_feature == "Theme Tags":
+            df["Theme Tag List"] = df["Theme Tags"].apply(parse_tags)
+            mlb = MultiLabelBinarizer()
+            theme_encoded = mlb.fit_transform(df["Theme Tag List"])
+            mlb_registry["Theme"] = mlb
+            feature_parts.append(theme_encoded)
+            feature_names += [f"Theme Tag {tag}" for tag in mlb.classes_]
+
         elif categorical_feature == "Meta Tags":
             df["Meta Tag List"] = df["Meta Tags"].apply(parse_tags)
             mlb = MultiLabelBinarizer()
